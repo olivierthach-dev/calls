@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Journal d'appels</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+.app-shell {
+  --green: #043F47;
+  --grey: #EDEDED;
+  --white: #FFFFFF;
+  --midnight: #171733;
+  --plum: #42033D;
+  --cyan: #16E6FF;
+  --ink: #171733;
+  --ink-soft: #5B5B6B;
+  --paper: #EDEDED;
+  --paper-raised: #FFFFFF;
+  --line: #DCDCDC;
+  --unanswered: #B33A30;
+  --potential: #42033D;
+  --demo: #043F47;
+  font-family: 'Manrope', -apple-system, sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  min-height: 100vh;
+  padding: 0 32px 36px;
+}
+.app-shell * { box-sizing: border-box; font-family: inherit; }
+.app-shell h1, .app-shell h2 { font-family: 'Manrope', sans-serif; margin: 0; }
+.app-shell h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.01em; color: var(--green); }
+.app-shell h2 { font-size: 16px; font-weight: 700; margin-bottom: 14px; color: var(--green); }
+.subtitle { margin: 5px 0 0; color: var(--ink-soft); font-size: 13.5px; }
+
+.masthead-bar {
+  height: 6px; margin: 0 -32px 28px; background: linear-gradient(
+    90deg, var(--unanswered) 0 33%, var(--potential) 33% 66%, var(--demo) 66% 100%
+  );
+}
+
+.topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; padding-top: 28px; }
+.topbar-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.reset-confirm { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-soft); background: var(--grey); border-radius: 8px; padding: 6px 10px; }
+.lang-switch { display: flex; align-items: center; gap: 6px; color: var(--ink-soft); border: 1px solid var(--line); background: var(--white); border-radius: 8px; padding: 4px 8px 4px 10px; }
+.lang-btn { border: none; background: transparent; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; color: var(--ink-soft); }
+.lang-btn.active { background: var(--green); color: var(--white); }
+
+.btn-primary, .btn-secondary {
+  border: 1.5px solid var(--green); border-radius: 8px; padding: 10px 16px;
+  font-size: 13.5px; font-weight: 700; cursor: pointer; display: inline-flex;
+  align-items: center; gap: 6px; transition: transform .1s ease, opacity .1s ease;
+}
+.btn-primary { background: var(--green); color: var(--white); }
+.btn-primary:hover { transform: translateY(-1px); opacity: .92; }
+.btn-secondary { background: var(--white); color: var(--green); border-color: var(--line); }
+.btn-secondary:hover { border-color: var(--green); }
+
+.agent-select, .agent-filter, select, input, textarea {
+  border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px;
+  font-size: 13.5px; background: var(--white); color: var(--ink);
+}
+.agent-select, .agent-filter { font-weight: 600; }
+.agent-add { display: flex; gap: 6px; align-items: center; }
+.agent-add input { width: 140px; }
+
+.filters { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+.segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--white); }
+.seg { padding: 8px 16px; font-size: 13px; background: transparent; border: none; border-right: 1px solid var(--line); cursor: pointer; color: var(--ink-soft); font-weight: 600; }
+.seg:last-child { border-right: none; }
+.seg.active { background: var(--green); color: var(--white); }
+.period-nav { display: flex; align-items: center; gap: 8px; }
+.period-label { font-size: 13.5px; min-width: 200px; font-weight: 600; }
+.icon-btn { border: 1px solid var(--line); background: var(--white); border-radius: 8px; padding: 6px 8px; cursor: pointer; display: inline-flex; align-items: center; color: var(--ink-soft); }
+.icon-btn:hover:not(:disabled) { border-color: var(--green); color: var(--green); }
+.icon-btn:disabled { opacity: .4; cursor: default; }
+.icon-btn.danger { color: #7A2A24; border-color: var(--unanswered); background: #F4DCD9; font-size: 12px; padding: 6px 8px; }
+
+.summary { font-size: 15.5px; font-weight: 500; color: var(--ink); margin: 2px 0 24px; max-width: 68ch; line-height: 1.5; }
+
+.quickbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+.quickbar-hint { font-size: 13px; color: var(--ink-soft); width: 100%; margin: 0 0 4px; }
+.quickbar-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+.quick-btn {
+  display: flex; align-items: center; gap: 10px; padding: 15px 22px;
+  border: 1.5px solid var(--qc); border-radius: 10px; background: var(--qs); color: var(--qc);
+  font-size: 15px; font-weight: 700; cursor: pointer; transition: transform .1s ease, box-shadow .1s ease;
+}
+.quick-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px -4px var(--qc); }
+.quick-btn:disabled { opacity: .4; cursor: default; }
+.quickbar-more { margin-left: auto; font-size: 12.5px; padding: 8px 12px; }
+
+.followup {
+  background: var(--white); border: 1px solid var(--line); border-left: 4px solid var(--cyan);
+  border-radius: 10px; padding: 16px 18px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px;
+}
+.followup-head { display: flex; align-items: center; gap: 10px; }
+.followup-time { font-size: 12.5px; color: var(--ink-soft); }
+.followup-close { margin-left: auto; }
+.followup-client-row { display: flex; gap: 8px; align-items: center; }
+.followup-client { max-width: 280px; }
+.followup-save { font-size: 12.5px; padding: 8px 12px; white-space: nowrap; }
+.followup-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.followup-date, .followup-time-input { padding: 6px 9px; font-size: 12.5px; }
+.followup-date { width: 130px; }
+.followup-time-input { width: 90px; }
+.followup-label { font-size: 12.5px; color: var(--ink-soft); font-weight: 600; }
+.chip-btn {
+  border: 1px solid var(--line); background: var(--grey); border-radius: 8px;
+  padding: 6px 12px; font-size: 12.5px; cursor: pointer; color: var(--ink); font-weight: 600;
+}
+.chip-btn:hover { border-color: var(--green); background: var(--white); }
+
+.kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 26px; }
+.ticket {
+  position: relative; background: var(--white); border: 1px solid var(--line); border-top: 4px solid var(--line);
+  border-radius: 12px; padding: 20px 20px 16px;
+}
+.ticket-icon { margin-bottom: 10px; }
+.ticket-value { font-family: 'Manrope', sans-serif; font-size: 32px; font-weight: 800; line-height: 1; letter-spacing: -0.01em; }
+.ticket-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; font-weight: 600; }
+.ticket-sub { font-size: 11.5px; color: var(--ink-soft); margin-top: 2px; opacity: .8; }
+.ticket-hero { background: var(--green); border-top-color: var(--green); }
+.hero-value { color: var(--white); }
+.hero-label { color: var(--white); font-weight: 700; opacity: 1; }
+.hero-sub { color: var(--white); opacity: .75; }
+
+.charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.panel { background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.panel-head h2 { margin-bottom: 0; }
+.segmented.small { font-size: 12px; }
+.segmented.small .seg { padding: 5px 10px; font-size: 12px; }
+.chart-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; font-size: 12px; color: var(--ink-soft); }
+.chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.chart-legend i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.chart-empty { color: var(--ink-soft); font-size: 13px; padding: 30px 0; text-align: center; }
+
+.demo-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.demo-list li { display: flex; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+.demo-list li:last-child { border-bottom: none; padding-bottom: 0; }
+.demo-date { display: flex; flex-direction: column; min-width: 70px; font-size: 12.5px; }
+.demo-date strong { font-family: 'Manrope', sans-serif; font-size: 15px; font-weight: 800; color: var(--green); }
+.demo-info { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13.5px; align-items: baseline; }
+.demo-client { font-weight: 700; }
+.demo-agent { color: var(--ink-soft); font-size: 12.5px; }
+.demo-notes { color: var(--ink-soft); font-size: 12.5px; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-weight: 700; color: var(--ink-soft); padding: 9px 10px; border-bottom: 1.5px solid var(--line); font-size: 11.5px; letter-spacing: 0.02em; }
+.sortable-th { cursor: pointer; user-select: none; white-space: nowrap; }
+.sortable-th:hover { color: var(--green); }
+.sort-arrow { display: inline-block; width: 10px; font-size: 10px; margin-left: 3px; }
+td { padding: 10px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tbody tr:hover { background: var(--grey); }
+.mono { font-weight: 600; white-space: nowrap; color: var(--ink-soft); font-size: 13px; }
+.notes-cell { max-width: 320px; color: var(--ink-soft); }
+.chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.row-actions { display: flex; gap: 6px; white-space: nowrap; }
+.empty { color: var(--ink-soft); font-size: 13.5px; }
+
+.inline-form { border-left: 4px solid var(--cyan); display: flex; flex-direction: column; gap: 15px; }
+.drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--ink-soft); font-weight: 600; }
+.field-row { display: flex; gap: 10px; }
+.field-row .field { flex: 1; }
+.inline-add { display: flex; gap: 6px; }
+.status-toggle { display: flex; flex-wrap: wrap; gap: 7px; }
+.status-btn { display: flex; align-items: center; gap: 8px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); cursor: pointer; font-size: 13.5px; color: var(--ink); font-weight: 600; }
+.status-btn.active { font-weight: 800; }
+.drawer-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 6px; }
+.banner-error { background: #F4DCD9; border: 1px solid var(--unanswered); color: #7A2A24; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 13.5px; }
+.banner-danger { padding: 14px 16px; }
+
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+svg.icon { display: block; flex-shrink: 0; }
+
+@media (max-width: 760px) {
+  .app-shell { padding: 0 16px 24px; }
+  .masthead-bar { margin: 0 -16px 20px; }
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .charts { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div id="app" class="app-shell"></div>
+
+<script>
+"use strict";
+
+// ================= constants =================
+
+var LANGS = [
+  { code: "fr", label: "FR" },
+  { code: "en", label: "EN" },
+  { code: "es", label: "ES" },
+];
+
+var STATUS_META = {
+  unanswered: { color: "#B33A30", soft: "#F4DCD9", icon: "phoneOff" },
+  potential: { color: "#42033D", soft: "#EBDCE9", icon: "calendarClock" },
+  demo_booked: { color: "#043F47", soft: "#D9E6E7", icon: "calendarCheck" },
+  refused: { color: "#171733", soft: "#DEDEE3", icon: "x" },
+  explained: { color: "#043F47", soft: "#D9E6E7", icon: "phone" }
+};
+var QUICK_STATUSES = ["unanswered", "potential", "demo_booked", "refused"];
+var DETAIL_FIRST_STATUSES = ["potential", "demo_booked"];
+var NEXT_ACTION_META = {
+  demo: { color: "#043F47" },
+  sdr: { color: "#171733" },
+  callback: { color: "#6B6B6B" }
+};
+
+function nextActionTypeFor(status) {
+  if (status === "demo_booked") return "demo";
+  if (status === "potential") return "sdr";
+  return null;
+}
+
+var DAY_MS = 86400000;
+
+var MONTHS = {
+  fr: ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"],
+  en: ["January","February","March","April","May","June","July","August","September","October","November","December"],
+  es: ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"]
+};
+var WEEKDAYS = {
+  fr: ["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"],
+  en: ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+  es: ["lunes","martes","miércoles","jueves","viernes","sábado","domingo"]
+};
+
+function cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
+
+function plural(lang, n, key) {
+  var forms = {
+    fr: { call: ["appel","appels"], contact: ["contact","contacts"], scheduled: ["programmé","programmés"] },
+    en: { call: ["call","calls"], contact: ["contact","contacts"], scheduled: ["scheduled","scheduled"] },
+    es: { call: ["llamada","llamadas"], contact: ["contacto","contactos"], scheduled: ["programado","programados"] }
+  };
+  return forms[lang][key][n === 1 ? 0 : 1];
+}
+
+function pct(n, total) { if (!total) return 0; return Math.round((n / total) * 100); }
+function uid() { return "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 9); }
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+var STRINGS = {
+  fr: {
+    appTitle: "Journal d'appels",
+    appSubtitle: "Suivi quotidien, hebdomadaire et mensuel de l'équipe",
+    whoAreYou: "Qui es-tu ?",
+    addAgent: "+ Ajouter un agent…",
+    agentNamePlaceholder: "Nom de l'agent",
+    ok: "OK",
+    clearData: "Vider les données",
+    confirmDeleteCalls: function (n) { return "Ceci supprimera définitivement les " + n + " appel" + (n > 1 ? "s" : "") + " enregistré" + (n > 1 ? "s" : "") + " pour TOUTE l'équipe, pas seulement pour toi. Cette action est irréversible."; },
+    confirmDeleteTitle: "Vider toutes les données de l'équipe ?",
+    confirmDeleteYes: "Oui, tout supprimer",
+    confirm: "Confirmer",
+    cancel: "Annuler",
+    quickHint: "Choisis ton nom en haut à droite pour commencer à logger.",
+    detailedEntry: "Saisie détaillée",
+    loggedAt: function (time) { return "enregistré à " + time; },
+    done: "Terminé",
+    clientPlaceholder: "Nom du client / fiche (optionnel)",
+    save: "Enregistrer",
+    saved: "Enregistré",
+    tomorrow: "Demain",
+    plus3d: "+3 j",
+    plus1week: "+1 semaine",
+    day: "Jour", week: "Semaine", month: "Mois",
+    prevPeriod: "Période précédente", nextPeriod: "Période suivante",
+    wholeTeam: "Toute l'équipe",
+    kpiTotal: "Appels enregistrés",
+    kpiUnanswered: "Non répondus",
+    callsCount: function (n) { return n + " " + plural("fr", n, "call"); },
+    breakdownByAgent: "Répartition par agent",
+    trendOverDays: function (n) { return "Tendance sur " + n + " jours"; },
+    dayAbbrev: "j",
+    upcomingContacts: "Prochains contacts programmés",
+    today: "aujourd'hui",
+    inNDays: function (n) { return "dans " + n + " j"; },
+    noNameClient: "Client sans nom",
+    history: function (label) { return "Historique — " + label.toLowerCase(); },
+    allStatuses: "Tous les statuts",
+    noCallsPeriod: "Aucun appel enregistré sur cette période. Utilise les boutons rapides en haut pour en ajouter un.",
+    noCallsFilter: "Aucun appel ne correspond à ce filtre.",
+    colDate: "Date", colAgent: "Agent", colClient: "Client / fiche", colStatus: "Statut",
+    colNextContact: "Prochain contact", colNotes: "Notes",
+    edit: "Modifier", delete: "Supprimer",
+    newCallDetailed: "Nouvel appel, en détail",
+    editCall: "Modifier l'appel",
+    agent: "Agent",
+    choose: "Choisir…",
+    date: "Date", time: "Heure",
+    callResult: "Résultat de l'appel",
+    clientRecord: "Client / fiche",
+    clientPlaceholderLong: "Nom du client ou de l'entreprise",
+    noteOptional: "Remarque (optionnel)",
+    potentialNeed: "Besoin identifié, détails de la fiche client",
+    demoDetails: "Détails de la démo, fiche client",
+    refusalReason: "Raison du refus",
+    refusalPlaceholder: "Explique pourquoi le client a refusé…",
+    voicemailBusy: "Répondeur, occupé…",
+    clientContextDetails: "Détails du contexte client",
+    add: "Ajouter l'appel",
+    dateFor: function (label) { return "Date " + label.toLowerCase(); },
+    status: { unanswered: "Pas de réponse", potential: "Potentiel", demo_booked: "Démo booké", refused: "Refus", explained: "Répondu, expliqué" },
+    nextAction: { demo: "RDV / démo", sdr: "Prochain call SDR", callback: "Rappel client" },
+    loadError: "Impossible de charger les données depuis ce navigateur.",
+    weekOf: function (start, end, year) { return "Semaine du " + start + " au " + end + " " + year; },
+    summary: function (label, stats, upcoming) {
+      if (!stats.total) return label + " — aucun appel enregistré pour l'instant.";
+      var up = upcoming ? " (" + upcoming + " " + plural("fr", upcoming, "contact") + " " + plural("fr", upcoming, "scheduled") + " à venir)" : "";
+      return label + " : " + stats.total + " " + plural("fr", stats.total, "call") + ", " + pct(stats.unanswered, stats.total) + "% sans réponse, " + pct(stats.potential, stats.total) + "% avec potentiel, " + pct(stats.demoBooked, stats.total) + "% avec démo booké, " + pct(stats.refused, stats.total) + "% de refus" + up + ".";
+    }
+  },
+  en: {
+    appTitle: "Call journal",
+    appSubtitle: "Daily, weekly, and monthly tracking for the team",
+    whoAreYou: "Who are you?",
+    addAgent: "+ Add an agent…",
+    agentNamePlaceholder: "Agent name",
+    ok: "OK",
+    clearData: "Clear data",
+    confirmDeleteCalls: function (n) { return "This will permanently delete all " + n + " logged call" + (n > 1 ? "s" : "") + " for the WHOLE team, not just for you. This action can't be undone."; },
+    confirmDeleteTitle: "Clear all of the team's data?",
+    confirmDeleteYes: "Yes, delete everything",
+    confirm: "Confirm",
+    cancel: "Cancel",
+    quickHint: "Pick your name in the top right to start logging.",
+    detailedEntry: "Detailed entry",
+    loggedAt: function (time) { return "logged at " + time; },
+    done: "Done",
+    clientPlaceholder: "Client name / record (optional)",
+    save: "Save",
+    saved: "Saved",
+    tomorrow: "Tomorrow",
+    plus3d: "+3 d",
+    plus1week: "+1 week",
+    day: "Day", week: "Week", month: "Month",
+    prevPeriod: "Previous period", nextPeriod: "Next period",
+    wholeTeam: "Whole team",
+    kpiTotal: "Calls logged",
+    kpiUnanswered: "Unanswered",
+    callsCount: function (n) { return n + " " + plural("en", n, "call"); },
+    breakdownByAgent: "Breakdown by agent",
+    trendOverDays: function (n) { return "Trend over " + n + " days"; },
+    dayAbbrev: "d",
+    upcomingContacts: "Upcoming scheduled contacts",
+    today: "today",
+    inNDays: function (n) { return "in " + n + "d"; },
+    noNameClient: "Unnamed client",
+    history: function (label) { return "History — " + label.toLowerCase(); },
+    allStatuses: "All statuses",
+    noCallsPeriod: "No calls logged for this period yet. Use the quick buttons above to add one.",
+    noCallsFilter: "No calls match this filter.",
+    colDate: "Date", colAgent: "Agent", colClient: "Client / record", colStatus: "Status",
+    colNextContact: "Next contact", colNotes: "Notes",
+    edit: "Edit", delete: "Delete",
+    newCallDetailed: "New call, in detail",
+    editCall: "Edit call",
+    agent: "Agent",
+    choose: "Choose…",
+    date: "Date", time: "Time",
+    callResult: "Call outcome",
+    clientRecord: "Client / record",
+    clientPlaceholderLong: "Client or company name",
+    noteOptional: "Note (optional)",
+    potentialNeed: "Identified need, client record details",
+    demoDetails: "Demo details, client record",
+    refusalReason: "Reason for declining",
+    refusalPlaceholder: "Explain why the client declined…",
+    voicemailBusy: "Voicemail, busy…",
+    clientContextDetails: "Client context details",
+    add: "Add call",
+    dateFor: function (label) { return label + " date"; },
+    status: { unanswered: "No answer", potential: "Potential", demo_booked: "Demo booked", refused: "Declined", explained: "Answered, explained" },
+    nextAction: { demo: "Meeting / demo", sdr: "Next SDR call", callback: "Client callback" },
+    loadError: "Couldn't load the data from this browser.",
+    weekOf: function (start, end, year) { return "Week of " + start + " to " + end + ", " + year; },
+    summary: function (label, stats, upcoming) {
+      if (!stats.total) return label + " — no calls logged yet.";
+      var up = upcoming ? " (" + upcoming + " " + plural("en", upcoming, "scheduled") + " " + plural("en", upcoming, "contact") + " coming up)" : "";
+      return label + ": " + stats.total + " " + plural("en", stats.total, "call") + ", " + pct(stats.unanswered, stats.total) + "% unanswered, " + pct(stats.potential, stats.total) + "% potential, " + pct(stats.demoBooked, stats.total) + "% demo booked, " + pct(stats.refused, stats.total) + "% declined" + up + ".";
+    }
+  },
+  es: {
+    appTitle: "Diario de llamadas",
+    appSubtitle: "Seguimiento diario, semanal y mensual del equipo",
+    whoAreYou: "¿Quién eres?",
+    addAgent: "+ Añadir un agente…",
+    agentNamePlaceholder: "Nombre del agente",
+    ok: "OK",
+    clearData: "Vaciar los datos",
+    confirmDeleteCalls: function (n) { return "Esto eliminará permanentemente las " + n + " llamada" + (n > 1 ? "s" : "") + " registrada" + (n > 1 ? "s" : "") + " de TODO el equipo, no solo las tuyas. Esta acción no se puede deshacer."; },
+    confirmDeleteTitle: "¿Vaciar todos los datos del equipo?",
+    confirmDeleteYes: "Sí, eliminar todo",
+    confirm: "Confirmar",
+    cancel: "Cancelar",
+    quickHint: "Elige tu nombre arriba a la derecha para empezar a registrar.",
+    detailedEntry: "Entrada detallada",
+    loggedAt: function (time) { return "registrado a las " + time; },
+    done: "Hecho",
+    clientPlaceholder: "Nombre del cliente / ficha (opcional)",
+    save: "Guardar",
+    saved: "Guardado",
+    tomorrow: "Mañana",
+    plus3d: "+3 d",
+    plus1week: "+1 semana",
+    day: "Día", week: "Semana", month: "Mes",
+    prevPeriod: "Período anterior", nextPeriod: "Período siguiente",
+    wholeTeam: "Todo el equipo",
+    kpiTotal: "Llamadas registradas",
+    kpiUnanswered: "Sin respuesta",
+    callsCount: function (n) { return n + " " + plural("es", n, "call"); },
+    breakdownByAgent: "Desglose por agente",
+    trendOverDays: function (n) { return "Tendencia de " + n + " días"; },
+    dayAbbrev: "d",
+    upcomingContacts: "Próximos contactos programados",
+    today: "hoy",
+    inNDays: function (n) { return "en " + n + " d"; },
+    noNameClient: "Cliente sin nombre",
+    history: function (label) { return "Historial — " + label.toLowerCase(); },
+    allStatuses: "Todos los estados",
+    noCallsPeriod: "Todavía no hay llamadas registradas en este período. Usa los botones rápidos de arriba para añadir una.",
+    noCallsFilter: "Ninguna llamada coincide con este filtro.",
+    colDate: "Fecha", colAgent: "Agente", colClient: "Cliente / ficha", colStatus: "Estado",
+    colNextContact: "Próximo contacto", colNotes: "Notas",
+    edit: "Editar", delete: "Eliminar",
+    newCallDetailed: "Nueva llamada, en detalle",
+    editCall: "Editar llamada",
+    agent: "Agente",
+    choose: "Elegir…",
+    date: "Fecha", time: "Hora",
+    callResult: "Resultado de la llamada",
+    clientRecord: "Cliente / ficha",
+    clientPlaceholderLong: "Nombre del cliente o de la empresa",
+    noteOptional: "Nota (opcional)",
+    potentialNeed: "Necesidad identificada, detalles de la ficha del cliente",
+    demoDetails: "Detalles de la demo, ficha del cliente",
+    refusalReason: "Motivo del rechazo",
+    refusalPlaceholder: "Explica por qué el cliente rechazó la oferta…",
+    voicemailBusy: "Buzón de voz, ocupado…",
+    clientContextDetails: "Detalles del contexto del cliente",
+    add: "Añadir llamada",
+    dateFor: function (label) { return "Fecha " + label.toLowerCase(); },
+    status: { unanswered: "Sin respuesta", potential: "Potencial", demo_booked: "Demo reservada", refused: "Rechazada", explained: "Respondida, explicada" },
+    nextAction: { demo: "Reunión / demo", sdr: "Próxima llamada SDR", callback: "Llamada de seguimiento" },
+    loadError: "No se pudieron cargar los datos de este navegador.",
+    weekOf: function (start, end, year) { return "Semana del " + start + " al " + end + " de " + year; },
+    summary: function (label, stats, upcoming) {
+      if (!stats.total) return label + " — todavía no hay llamadas registradas.";
+      var up = upcoming ? " (" + upcoming + " " + plural("es", upcoming, "contact") + " " + plural("es", upcoming, "scheduled") + " próximamente)" : "";
+      return label + ": " + stats.total + " " + plural("es", stats.total, "call") + ", " + pct(stats.unanswered, stats.total) + "% sin respuesta, " + pct(stats.potential, stats.total) + "% potencial, " + pct(stats.demoBooked, stats.total) + "% demo reservada, " + pct(stats.refused, stats.total) + "% rechazada" + up + ".";
+    }
+  }
+};
+
+// ================= date helpers =================
+
+function startOfDay(d) { var x = new Date(d); x.setHours(0,0,0,0); return x; }
+function addDays(d, n) { return new Date(d.getTime() + n * DAY_MS); }
+function startOfWeek(d) { var x = startOfDay(d); var dow = (x.getDay() + 6) % 7; return addDays(x, -dow); }
+function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
+function fmtShort(d) { return String(d.getDate()).padStart(2,"0") + "/" + String(d.getMonth()+1).padStart(2,"0"); }
+function fmtLong(d, lang) {
+  var month = MONTHS[lang][d.getMonth()], day = d.getDate(), year = d.getFullYear();
+  if (lang === "en") return month + " " + day + ", " + year;
+  if (lang === "es") return day + " de " + month + " de " + year;
+  return day + " " + month + " " + year;
+}
+function fmtDayLabel(d, lang) {
+  var wd = WEEKDAYS[lang][(d.getDay() + 6) % 7];
+  return lang === "en" ? wd + ", " + fmtLong(d, lang) : wd + " " + fmtLong(d, lang);
+}
+function toInputDate(d) { return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+function toInputTime(d) { return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0"); }
+
+function rangeForPeriod(type, offset, lang) {
+  var today = new Date();
+  if (type === "day") {
+    var start = addDays(startOfDay(today), offset);
+    return { start: start, end: addDays(start, 1), label: fmtDayLabel(start, lang) };
+  }
+  if (type === "week") {
+    var start = addDays(startOfWeek(today), offset * 7);
+    var end = addDays(start, 7);
+    var last = addDays(end, -1);
+    return { start: start, end: end, label: STRINGS[lang].weekOf(fmtShort(start), fmtShort(last), last.getFullYear()) };
+  }
+  var base = startOfMonth(today);
+  var start2 = new Date(base.getFullYear(), base.getMonth() + offset, 1);
+  var end2 = new Date(base.getFullYear(), base.getMonth() + offset + 1, 1);
+  return { start: start2, end: end2, label: cap(MONTHS[lang][start2.getMonth()]) + " " + start2.getFullYear() };
+}
+
+// ================= icons (inline SVG, stroke-based) =================
+
+var ICONS = {
+  phoneOff: '<path d="M10.7 5a16 16 0 0 1 6.3 6.3"/><path d="M14 3a19.9 19.9 0 0 1 5 5"/><path d="M2 2l20 20"/><path d="M18.9 18.9a2 2 0 0 1-2.2.5 19.8 19.8 0 0 1-6-4.5 19.5 19.5 0 0 1-3.4-5A19.8 19.8 0 0 1 5 3.1 2 2 0 0 1 7 1h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L11 8.7"/>',
+  calendarClock: '<path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><circle cx="16" cy="16" r="3.2"/><path d="M16 14.5V16l1 .8"/>',
+  calendarCheck: '<path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M9 16l2 2 4-4"/>',
+  phone: '<path d="M18.9 18.9a2 2 0 0 1-2.2.5 19.8 19.8 0 0 1-6-4.5 19.5 19.5 0 0 1-3.4-5A19.8 19.8 0 0 1 5 3.1 2 2 0 0 1 7 1h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L11 8.7a16 16 0 0 0 6.3 6.3l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2v3a2 2 0 0 1-2 2z"/>',
+  users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',
+  plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
+  x: '<path d="M18 6 6 18"/><path d="M6 6l12 12"/>',
+  chevronLeft: '<path d="M15 18l-6-6 6-6"/>',
+  chevronRight: '<path d="M9 18l6-6-6-6"/>',
+  pencil: '<path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>',
+  trash: '<path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
+  check: '<path d="M20 6L9 17l-5-5"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/>',
+  refresh: '<path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/>'
+};
+function icon(name, size, extraStyle) {
+  var s = size || 16;
+  return '<svg class="icon" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="' + (extraStyle||"") + '">' + (ICONS[name] || "") + '</svg>';
+}
+
+// ================= shared backend config =================
+// 1. Deploy the provided Apps Script as a Web App (see setup guide).
+// 2. Paste the resulting URL below, between the quotes.
+var SHEET_API_URL = "https://script.google.com/a/macros/sosafe.de/s/AKfycbxbAsAvon3QfEAhJs0viWJaSsY5-krwPt2Rj8_K_0AivMOMIMGpcOZjWABMofhZ35n4IA/exec";
+
+function apiGet(key) {
+  return fetch(SHEET_API_URL + "?key=" + encodeURIComponent(key), { method: "GET" })
+    .then(function (r) { return r.json(); })
+    .then(function (data) { return data && data.value != null ? data.value : null; });
+}
+function apiSet(key, value) {
+  return fetch(SHEET_API_URL, { method: "POST", body: JSON.stringify({ key: key, value: value }) })
+    .then(function (r) { return r.json(); });
+}
+
+// ================= state =================
+
+var state = {
+  agents: [],
+  calls: [],
+  currentAgent: "",
+  lang: "fr",
+  periodType: "week",
+  periodOffset: 0,
+  filterAgent: "all",
+  trendDays: 14,
+  sortKey: "dateTime",
+  sortDir: "desc",
+  historyStatusFilter: "all",
+  showForm: false,
+  editingId: null,
+  confirmDeleteId: null,
+  confirmReset: false,
+  lastLoggedId: null,
+  addingAgentTop: false,
+  addingAgentForm: false,
+  dataLoading: true,
+  dataError: "",
+  syncing: false
+};
+var quickClientDraft = "";
+var quickSaved = false;
+var formDraft = null;
+
+function loadLocalPrefs() {
+  state.lang = localStorage.getItem("ja_lang") || "fr";
+  if (!STRINGS[state.lang]) state.lang = "fr";
+  state.currentAgent = localStorage.getItem("ja_current_agent") || "";
+}
+
+function loadRemoteData() {
+  if (!SHEET_API_URL) {
+    state.calls = [];
+    state.agents = [];
+    state.dataLoading = false;
+    state.dataError = "config";
+    render();
+    return;
+  }
+  state.dataLoading = true;
+  render();
+  Promise.all([apiGet("calls"), apiGet("agents")])
+    .then(function (results) {
+      try { state.calls = results[0] ? JSON.parse(results[0]) : []; } catch (e) { state.calls = []; }
+      try { state.agents = results[1] ? JSON.parse(results[1]) : []; } catch (e) { state.agents = []; }
+      if (!state.currentAgent && state.agents.length) state.currentAgent = state.agents[0];
+      state.dataError = "";
+    })
+    .catch(function () { state.dataError = "network"; })
+    .then(function () { state.dataLoading = false; render(); });
+}
+
+function refreshFromServer(silent) {
+  if (!SHEET_API_URL) return;
+  if (!silent) { state.syncing = true; render(); }
+  Promise.all([apiGet("calls"), apiGet("agents")])
+    .then(function (results) {
+      try { state.calls = results[0] ? JSON.parse(results[0]) : []; } catch (e) {}
+      try { state.agents = results[1] ? JSON.parse(results[1]) : []; } catch (e) {}
+      state.dataError = "";
+    })
+    .catch(function () { if (!silent) state.dataError = "network"; })
+    .then(function () { state.syncing = false; render(); });
+}
+
+function saveCalls() {
+  if (!SHEET_API_URL) return;
+  apiSet("calls", JSON.stringify(state.calls)).catch(function () { state.dataError = "network"; render(); });
+}
+function saveAgents() {
+  if (!SHEET_API_URL) return;
+  apiSet("agents", JSON.stringify(state.agents)).catch(function () { state.dataError = "network"; render(); });
+}
+function saveCurrentAgent() { try { localStorage.setItem("ja_current_agent", state.currentAgent); } catch (e) {} }
+function saveLang() { try { localStorage.setItem("ja_lang", state.lang); } catch (e) {} }
+
+function addAgentIfNew(name) {
+  var trimmed = (name || "").trim();
+  if (!trimmed) return;
+  if (state.agents.indexOf(trimmed) === -1) { state.agents.push(trimmed); saveAgents(); }
+}
+
+// ================= derived data =================
+
+function getRange() { return rangeForPeriod(state.periodType, state.periodOffset, state.lang); }
+
+function getPeriodCalls(range) {
+  return state.calls.filter(function (c) {
+    var t = new Date(c.dateTime);
+    if (t < range.start || t >= range.end) return false;
+    if (state.filterAgent !== "all" && c.agent !== state.filterAgent) return false;
+    return true;
+  });
+}
+
+function getStats(periodCalls) {
+  var total = periodCalls.length;
+  var unanswered = periodCalls.filter(function (c) { return c.status === "unanswered"; }).length;
+  var potential = periodCalls.filter(function (c) { return c.status === "potential"; }).length;
+  var demoBooked = periodCalls.filter(function (c) { return c.status === "demo_booked"; }).length;
+  var refused = periodCalls.filter(function (c) { return c.status === "refused"; }).length;
+  return { total: total, unanswered: unanswered, potential: potential, demoBooked: demoBooked, refused: refused };
+}
+
+function getAgentBreakdown(periodCalls) {
+  if (state.filterAgent !== "all") return [];
+  var map = {};
+  periodCalls.forEach(function (c) {
+    if (!map[c.agent]) map[c.agent] = { agent: c.agent, unanswered: 0, potential: 0, demo_booked: 0, refused: 0 };
+    map[c.agent][c.status] = (map[c.agent][c.status] || 0) + 1;
+  });
+  return Object.keys(map).map(function (k) { return map[k]; }).sort(function (a, b) {
+    return (b.unanswered + b.potential + b.demo_booked + b.refused) - (a.unanswered + a.potential + a.demo_booked + a.refused);
+  });
+}
+
+function getTrendData() {
+  var days = [];
+  for (var i = state.trendDays - 1; i >= 0; i--) {
+    var dayStart = addDays(startOfDay(new Date()), -i);
+    var dayEnd = addDays(dayStart, 1);
+    var dayCalls = state.calls.filter(function (c) {
+      var t = new Date(c.dateTime);
+      if (t < dayStart || t >= dayEnd) return false;
+      if (state.filterAgent !== "all" && c.agent !== state.filterAgent) return false;
+      return true;
+    });
+    days.push({
+      day: fmtShort(dayStart),
+      unanswered: dayCalls.filter(function (c) { return c.status === "unanswered"; }).length,
+      potential: dayCalls.filter(function (c) { return c.status === "potential"; }).length,
+      demo_booked: dayCalls.filter(function (c) { return c.status === "demo_booked"; }).length,
+      refused: dayCalls.filter(function (c) { return c.status === "refused"; }).length
+    });
+  }
+  return days;
+}
+
+function getUpcomingActions() {
+  var now = new Date();
+  return state.calls
+    .filter(function (c) { return c.nextAction && c.nextAction.dateTime && new Date(c.nextAction.dateTime) >= now; })
+    .filter(function (c) { return state.filterAgent === "all" || c.agent === state.filterAgent; })
+    .sort(function (a, b) { return new Date(a.nextAction.dateTime) - new Date(b.nextAction.dateTime); })
+    .slice(0, 8);
+}
+
+function getSortedCalls(periodCalls) {
+  var dir = state.sortDir === "asc" ? 1 : -1;
+  var t = STRINGS[state.lang];
+  function valueFor(c) {
+    switch (state.sortKey) {
+      case "agent": return c.agent || "";
+      case "client": return c.client || "";
+      case "status": return t.status[c.status] || t.status.unanswered;
+      case "nextAction": return (c.nextAction && c.nextAction.dateTime) ? new Date(c.nextAction.dateTime).getTime() : -Infinity;
+      default: return new Date(c.dateTime).getTime();
+    }
+  }
+  return periodCalls.slice().sort(function (a, b) {
+    var va = valueFor(a), vb = valueFor(b);
+    if (va < vb) return -1 * dir;
+    if (va > vb) return 1 * dir;
+    return 0;
+  });
+}
+
+// ================= actions =================
+
+function quickLog(status) {
+  if (!state.currentAgent) return;
+  var record = { id: uid(), agent: state.currentAgent, dateTime: new Date().toISOString(), status: status, client: "", notes: "", nextAction: null };
+  state.calls.push(record);
+  saveCalls();
+  state.lastLoggedId = record.id;
+  quickClientDraft = "";
+  quickSaved = false;
+  render();
+}
+
+function findCall(id) { return state.calls.find(function (c) { return c.id === id; }) || null; }
+
+function updateCall(id, patch) {
+  state.calls = state.calls.map(function (c) { return c.id === id ? Object.assign({}, c, patch) : c; });
+  saveCalls();
+}
+
+function saveQuickClientDraft() {
+  var last = findCall(state.lastLoggedId);
+  if (!last) return;
+  var input = document.getElementById("quick-client-input");
+  var val = input ? input.value.trim() : quickClientDraft.trim();
+  var patch = {};
+  var changed = false;
+  if (val !== (last.client || "")) { patch.client = val; changed = true; }
+  var notesInput = document.getElementById("quick-notes-input");
+  if (notesInput) {
+    var notesVal = notesInput.value.trim();
+    if (notesVal !== (last.notes || "")) { patch.notes = notesVal; changed = true; }
+  }
+  if (changed) updateCall(last.id, patch);
+}
+
+function applyQuickNextAction(daysOffset, type) {
+  var last = findCall(state.lastLoggedId);
+  if (!last) return;
+  var dt = addDays(new Date(last.dateTime), daysOffset);
+  updateCall(last.id, { nextAction: { type: type, dateTime: dt.toISOString(), notes: "" } });
+  render();
+}
+
+function deleteCall(id) {
+  state.calls = state.calls.filter(function (c) { return c.id !== id; });
+  saveCalls();
+  state.confirmDeleteId = null;
+  render();
+}
+
+function resetAllCalls() {
+  state.calls = [];
+  saveCalls();
+  state.lastLoggedId = null;
+  state.confirmReset = false;
+  render();
+}
+
+function emptyFormDraft() {
+  var now = new Date();
+  return {
+    agent: state.currentAgent || state.agents[0] || "",
+    date: toInputDate(now),
+    time: toInputTime(now),
+    status: "unanswered",
+    client: "",
+    notes: "",
+    nextActionDate: "",
+    nextActionTime: "",
+    nextActionNotes: "",
+    addingAgent: false,
+    agentDraft: ""
+  };
+}
+
+function openNewForm() {
+  state.editingId = null;
+  formDraft = emptyFormDraft();
+  state.showForm = true;
+  render();
+}
+
+function openEditForm(call) {
+  var dt = new Date(call.dateTime);
+  var na = call.nextAction;
+  var naDate = na && na.dateTime ? new Date(na.dateTime) : null;
+  state.editingId = call.id;
+  formDraft = {
+    agent: call.agent,
+    date: toInputDate(dt),
+    time: toInputTime(dt),
+    status: call.status,
+    client: call.client || "",
+    notes: call.notes || "",
+    nextActionDate: naDate ? toInputDate(naDate) : "",
+    nextActionTime: naDate ? toInputTime(naDate) : "",
+    nextActionNotes: (na && na.notes) || "",
+    addingAgent: false,
+    agentDraft: ""
+  };
+  state.showForm = true;
+  render();
+}
+
+function submitForm(e) {
+  e.preventDefault();
+  syncFormDraftFromDOM();
+  if (!formDraft.agent || !formDraft.agent.trim()) return;
+  addAgentIfNew(formDraft.agent);
+  var dateTime = new Date(formDraft.date + "T" + (formDraft.time || "00:00")).toISOString();
+  var autoType = nextActionTypeFor(formDraft.status);
+  var nextAction = (autoType && formDraft.nextActionDate) ? {
+    type: autoType,
+    dateTime: new Date(formDraft.nextActionDate + "T" + (formDraft.nextActionTime || "00:00")).toISOString(),
+    notes: (formDraft.nextActionNotes || "").trim()
+  } : null;
+  var record = {
+    id: state.editingId || uid(),
+    agent: formDraft.agent.trim(),
+    dateTime: dateTime,
+    status: formDraft.status,
+    client: (formDraft.client || "").trim(),
+    notes: (formDraft.notes || "").trim(),
+    nextAction: nextAction
+  };
+  if (state.editingId) {
+    state.calls = state.calls.map(function (c) { return c.id === state.editingId ? record : c; });
+  } else {
+    state.calls.push(record);
+    state.currentAgent = record.agent;
+    saveCurrentAgent();
+  }
+  saveCalls();
+  state.showForm = false;
+  formDraft = null;
+  render();
+}
+
+function syncFormDraftFromDOM() {
+  if (!formDraft) return;
+  var ids = ["date","time","client","notes","nextActionDate","nextActionTime","nextActionNotes"];
+  ids.forEach(function (id) {
+    var el = document.getElementById("form-" + id);
+    if (el) formDraft[id] = el.value;
+  });
+  var agentSel = document.getElementById("form-agent-select");
+  if (agentSel) formDraft.agent = agentSel.value;
+  var agentInput = document.getElementById("form-agent-draft");
+  if (agentInput) formDraft.agentDraft = agentInput.value;
+}
+
+function closeForm() {
+  state.showForm = false;
+  formDraft = null;
+  render();
+}
+
+// ================= rendering =================
+
+var root = document.getElementById("app");
+
+function render() {
+  var t = STRINGS[state.lang];
+
+  if (state.dataLoading) {
+    root.innerHTML = '<div class="masthead-bar"></div>' +
+      '<div style="display:flex;align-items:center;gap:10px;padding:40px;color:var(--ink-soft)">' + spinnerSvg() + ' ' + esc(loadingLabel()) + '</div>';
+    return;
+  }
+
+  var range = getRange();
+  var periodCalls = getPeriodCalls(range);
+  var stats = getStats(periodCalls);
+  var agentBreakdown = getAgentBreakdown(periodCalls);
+  var trendData = getTrendData();
+  var upcoming = getUpcomingActions();
+  var sorted = getSortedCalls(periodCalls);
+  var visible = state.historyStatusFilter === "all" ? sorted : sorted.filter(function (c) { return c.status === state.historyStatusFilter; });
+  var summarySentence = t.summary(range.label, stats, upcoming.length);
+
+  var html = "";
+  html += '<div class="masthead-bar"></div>';
+  if (state.dataError === "config") html += configBanner(t);
+  else if (state.dataError === "network") html += networkBanner(t);
+  if (state.confirmReset) html += resetConfirmBanner(t);
+  html += renderHeader(t);
+  html += renderQuickbar(t);
+  html += renderFollowup(t);
+  if (state.showForm) html += renderForm(t);
+  html += renderFilters(t, range);
+  html += '<p class="summary">' + esc(summarySentence) + '</p>';
+  html += renderKpis(t, stats);
+  html += renderCharts(t, agentBreakdown, trendData);
+  html += renderUpcoming(t, upcoming);
+  html += renderHistory(t, range, sorted, visible);
+
+  root.innerHTML = html;
+  attachEvents(t);
+}
+
+function spinnerSvg() {
+  return '<svg class="icon spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-9-9"/></svg>';
+}
+function loadingLabel() {
+  return state.lang === "en" ? "Loading shared data…" : (state.lang === "es" ? "Cargando los datos compartidos…" : "Chargement des données partagées…");
+}
+function configBanner(t) {
+  var msg = state.lang === "en"
+    ? "No shared backend configured yet — data won't be saved. Set SHEET_API_URL near the top of the script (see setup guide)."
+    : state.lang === "es"
+    ? "Todavía no hay backend compartido configurado — los datos no se guardarán. Define SHEET_API_URL al principio del script (ver guía de instalación)."
+    : "Aucun backend partagé n'est configuré — les données ne seront pas sauvegardées. Renseigne SHEET_API_URL en haut du script (voir le guide d'installation).";
+  return '<div class="banner-error">' + esc(msg) + '</div>';
+}
+function networkBanner(t) {
+  var msg = state.lang === "en"
+    ? "Couldn't reach the shared data source. Check your connection; your last changes may not have saved."
+    : state.lang === "es"
+    ? "No se pudo contactar con la fuente de datos compartida. Comprueba tu conexión; es posible que tus últimos cambios no se hayan guardado."
+    : "Impossible de contacter la source de données partagée. Vérifie ta connexion ; tes derniers changements n'ont peut-être pas été enregistrés.";
+  var retryLabel = state.lang === "en" ? "Retry" : state.lang === "es" ? "Reintentar" : "Réessayer";
+  return '<div class="banner-error">' + esc(msg) + ' <button type="button" class="icon-btn" data-action="manualRefresh" style="margin-left:8px;">' + esc(retryLabel) + '</button></div>';
+}
+
+function resetConfirmBanner(t) {
+  return '<div class="banner-error banner-danger">' +
+    '<strong style="display:block;margin-bottom:4px;font-size:14.5px;">' + esc(t.confirmDeleteTitle) + '</strong>' +
+    '<p style="margin:0 0 10px;">' + esc(t.confirmDeleteCalls(state.calls.length)) + '</p>' +
+    '<div style="display:flex;gap:10px;">' +
+    '<button type="button" class="btn-secondary" data-action="cancelReset">' + esc(t.cancel) + '</button>' +
+    '<button type="button" class="btn-primary" style="background:var(--unanswered);border-color:var(--unanswered);" data-action="resetAll">' + icon("trash", 14) + ' ' + esc(t.confirmDeleteYes) + '</button>' +
+    '</div></div>';
+}
+
+
+function renderHeader(t) {
+  var h = '<header class="topbar"><div><h1>' + esc(t.appTitle) + '</h1><p class="subtitle">' + esc(t.appSubtitle) + '</p></div>';
+  h += '<div class="topbar-actions">';
+  h += '<div class="lang-switch">' + icon("globe", 14);
+  LANGS.forEach(function (l) {
+    h += '<button type="button" class="lang-btn' + (state.lang === l.code ? ' active' : '') + '" data-action="setLang" data-lang="' + l.code + '">' + l.label + '</button>';
+  });
+  h += '</div>';
+
+  h += '<button type="button" class="icon-btn" data-action="manualRefresh" title="' + esc(state.lang === "en" ? "Refresh team data" : state.lang === "es" ? "Actualizar los datos del equipo" : "Actualiser les données de l'équipe") + '">' +
+    icon("refresh", 14, state.syncing ? "animation:spin 1s linear infinite" : "") + '</button>';
+
+  if (state.addingAgentTop) {
+    h += '<div class="agent-add">' +
+      '<input id="top-agent-input" autofocus placeholder="' + esc(t.agentNamePlaceholder) + '">' +
+      '<button type="button" class="icon-btn" data-action="commitTopAgent">' + esc(t.ok) + '</button>' +
+      '<button type="button" class="icon-btn" data-action="cancelTopAgent">' + icon("x", 14) + '</button>' +
+      '</div>';
+  } else {
+    h += '<select class="agent-select" data-action="agentSelect">';
+    if (!state.currentAgent) h += '<option value="">' + esc(t.whoAreYou) + '</option>';
+    state.agents.forEach(function (a) {
+      h += '<option value="' + esc(a) + '"' + (state.currentAgent === a ? ' selected' : '') + '>' + esc(a) + '</option>';
+    });
+    h += '<option value="__new__">' + esc(t.addAgent) + '</option></select>';
+  }
+
+  if (state.calls.length > 0) {
+    h += '<button type="button" class="btn-secondary" data-action="askReset">' + icon("trash", 14) + ' ' + esc(t.clearData) + '</button>';
+  }
+  h += '</div></header>';
+  return h;
+}
+
+function renderQuickbar(t) {
+  var h = '<section class="quickbar">';
+  if (!state.currentAgent) h += '<p class="quickbar-hint">' + esc(t.quickHint) + '</p>';
+  h += '<div class="quickbar-buttons">';
+  QUICK_STATUSES.forEach(function (key) {
+    var s = STATUS_META[key];
+    var needsDetail = DETAIL_FIRST_STATUSES.indexOf(key) !== -1;
+    h += '<button class="quick-btn" style="--qc:' + s.color + ';--qs:' + s.soft + '" ' + (!state.currentAgent ? 'disabled' : '') +
+      ' data-action="' + (needsDetail ? "openDetailedForStatus" : "quickLog") + '" data-status="' + key + '">' + icon(s.icon, 20) + '<span>' + esc(t.status[key]) + '</span></button>';
+  });
+  h += '</div><button class="btn-secondary quickbar-more" data-action="openNewForm">' + icon("plus", 14) + ' ' + esc(t.detailedEntry) + '</button></section>';
+  return h;
+}
+
+function renderFollowup(t) {
+  var last = findCall(state.lastLoggedId);
+  if (!last) return "";
+  var sMeta = STATUS_META[last.status] || STATUS_META.unanswered;
+  var sLabel = t.status[last.status] || t.status.unanswered;
+  var autoType = nextActionTypeFor(last.status);
+  var h = '<section class="followup"><div class="followup-head">' +
+    '<span class="chip" style="background:' + sMeta.soft + ';color:' + sMeta.color + '">' + esc(sLabel) + '</span>' +
+    '<span class="followup-time">' + esc(t.loggedAt(toInputTime(new Date(last.dateTime)))) + '</span>' +
+    '<button class="icon-btn followup-close" data-action="closeFollowup" aria-label="' + esc(t.done) + '">' + icon("x", 14) + '</button>' +
+    '</div>';
+  h += '<div class="followup-client-row">' +
+    '<input id="quick-client-input" class="followup-client" placeholder="' + esc(t.clientPlaceholder) + '" value="' + esc(last.client || "") + '">' +
+    '<button type="button" class="btn-secondary followup-save" data-action="saveQuickClient">' + (quickSaved ? icon("check", 14) + ' ' + esc(t.saved) : esc(t.save)) + '</button>' +
+    '</div>';
+  if (last.status === "refused") {
+    h += '<label class="field" style="gap:6px;"><span>' + esc(t.refusalReason) + '</span>' +
+      '<textarea id="quick-notes-input" rows="2" placeholder="' + esc(t.refusalPlaceholder) + '" style="border-color:' + (last.notes ? "var(--line)" : STATUS_META.refused.color) + '">' + esc(last.notes || "") + '</textarea></label>';
+  }
+  if (autoType) {
+    var naDate = last.nextAction ? new Date(last.nextAction.dateTime) : null;
+    h += '<div class="followup-chips"><span class="followup-label">' + esc(t.nextAction[autoType]) + ' :</span>' +
+      '<button class="chip-btn" data-action="quickChip" data-days="1" data-type="' + autoType + '">' + esc(t.tomorrow) + '</button>' +
+      '<button class="chip-btn" data-action="quickChip" data-days="3" data-type="' + autoType + '">' + esc(t.plus3d) + '</button>' +
+      '<button class="chip-btn" data-action="quickChip" data-days="7" data-type="' + autoType + '">' + esc(t.plus1week) + '</button>' +
+      '<input type="date" class="followup-date" id="quick-na-date" data-type="' + autoType + '" value="' + (naDate ? toInputDate(naDate) : "") + '">' +
+      '<input type="time" class="followup-time-input" id="quick-na-time" data-type="' + autoType + '" value="' + (naDate ? toInputTime(naDate) : "") + '">';
+    if (last.nextAction) {
+      var naMeta = NEXT_ACTION_META[autoType];
+      h += '<span class="chip" style="background:' + naMeta.color + '22;color:' + naMeta.color + '">' + esc(fmtShort(new Date(last.nextAction.dateTime))) + '</span>';
+    }
+    h += '</div>';
+  }
+  h += '</section>';
+  return h;
+}
+
+function renderForm(t) {
+  if (!formDraft) formDraft = emptyFormDraft();
+  var f = formDraft;
+  var isEditing = !!state.editingId;
+  var h = '<form class="panel inline-form" id="call-form">';
+  h += '<div class="drawer-header"><h2>' + esc(isEditing ? t.editCall : t.newCallDetailed) + '</h2>' +
+    '<button type="button" class="icon-btn" data-action="closeForm">' + icon("x", 18) + '</button></div>';
+
+  h += '<label class="field"><span>' + esc(t.agent) + '</span>';
+  if (f.addingAgent) {
+    h += '<div class="inline-add"><input id="form-agent-draft" autofocus value="' + esc(f.agentDraft || "") + '" placeholder="' + esc(t.agentNamePlaceholder) + '">' +
+      '<button type="button" class="icon-btn" data-action="commitFormAgent">' + esc(t.ok) + '</button></div>';
+  } else {
+    h += '<select id="form-agent-select" data-action="formAgentSelect"><option value="">' + esc(t.choose) + '</option>';
+    state.agents.forEach(function (a) {
+      h += '<option value="' + esc(a) + '"' + (f.agent === a ? ' selected' : '') + '>' + esc(a) + '</option>';
+    });
+    h += '<option value="__new__">' + esc(t.addAgent) + '</option></select>';
+  }
+  h += '</label>';
+
+  h += '<div class="field-row"><label class="field"><span>' + esc(t.date) + '</span><input type="date" id="form-date" value="' + esc(f.date) + '" required></label>' +
+    '<label class="field"><span>' + esc(t.time) + '</span><input type="time" id="form-time" value="' + esc(f.time) + '" required></label></div>';
+
+  h += '<label class="field"><span>' + esc(t.callResult) + '</span><div class="status-toggle">';
+  QUICK_STATUSES.forEach(function (key) {
+    var s = STATUS_META[key];
+    var active = f.status === key;
+    h += '<button type="button" class="status-btn' + (active ? ' active' : '') + '" style="' + (active ? 'border-color:' + s.color + ';color:' + s.color + ';background:' + s.soft : '') + '" data-action="formStatus" data-status="' + key + '">' + icon(s.icon, 15) + ' ' + esc(t.status[key]) + '</button>';
+  });
+  h += '</div></label>';
+
+  h += '<label class="field"><span>' + esc(t.clientRecord) + '</span><input id="form-client" value="' + esc(f.client) + '" placeholder="' + esc(t.clientPlaceholderLong) + '"></label>';
+
+  var noteLabel = f.status === "unanswered" ? t.noteOptional : f.status === "potential" ? t.potentialNeed : f.status === "refused" ? t.refusalReason : t.demoDetails;
+  var notePlaceholder = f.status === "unanswered" ? t.voicemailBusy : f.status === "refused" ? t.refusalPlaceholder : t.clientContextDetails;
+  h += '<label class="field"><span>' + esc(noteLabel) + '</span><textarea id="form-notes" rows="3" placeholder="' + esc(notePlaceholder) + '"' + (f.status === "refused" ? ' required' : '') + '>' + esc(f.notes) + '</textarea></label>';
+
+  var naType = nextActionTypeFor(f.status);
+  if (naType) {
+    h += '<div class="field-row"><label class="field"><span>' + esc(t.dateFor(t.nextAction[naType])) + '</span><input type="date" id="form-nextActionDate" value="' + esc(f.nextActionDate) + '"></label>' +
+      '<label class="field"><span>' + esc(t.time) + '</span><input type="time" id="form-nextActionTime" value="' + esc(f.nextActionTime) + '"></label></div>';
+  }
+
+  h += '<div class="drawer-actions"><button type="button" class="btn-secondary" data-action="closeForm">' + esc(t.cancel) + '</button>' +
+    '<button type="submit" class="btn-primary">' + esc(isEditing ? t.save : t.add) + '</button></div>';
+  h += '</form>';
+  return h;
+}
+
+function renderFilters(t, range) {
+  var h = '<section class="filters"><div class="segmented">';
+  [["day", t.day], ["week", t.week], ["month", t.month]].forEach(function (p) {
+    h += '<button class="seg' + (state.periodType === p[0] ? ' active' : '') + '" data-action="setPeriodType" data-type="' + p[0] + '">' + esc(p[1]) + '</button>';
+  });
+  h += '</div><div class="period-nav">' +
+    '<button class="icon-btn" data-action="periodPrev" aria-label="' + esc(t.prevPeriod) + '">' + icon("chevronLeft", 16) + '</button>' +
+    '<span class="period-label">' + esc(range.label) + '</span>' +
+    '<button class="icon-btn" data-action="periodNext" aria-label="' + esc(t.nextPeriod) + '" ' + (state.periodOffset >= 0 ? 'disabled' : '') + '>' + icon("chevronRight", 16) + '</button>' +
+    '</div><select class="agent-filter" data-action="setFilterAgent"><option value="all"' + (state.filterAgent === "all" ? ' selected' : '') + '>' + esc(t.wholeTeam) + '</option>';
+  state.agents.forEach(function (a) {
+    h += '<option value="' + esc(a) + '"' + (state.filterAgent === a ? ' selected' : '') + '>' + esc(a) + '</option>';
+  });
+  h += '</select></section>';
+  return h;
+}
+
+function renderKpis(t, stats) {
+  var h = '<section class="kpis">';
+  h += kpiCard(t.kpiTotal, stats.total, null, "users", "var(--midnight)", false);
+  h += kpiCard(t.kpiUnanswered, pct(stats.unanswered, stats.total) + "%", t.callsCount(stats.unanswered), "phoneOff", STATUS_META.unanswered.color, false);
+  h += kpiCard(t.status.potential, pct(stats.potential, stats.total) + "%", t.callsCount(stats.potential), "calendarClock", STATUS_META.potential.color, false);
+  h += kpiCard(t.status.demo_booked, pct(stats.demoBooked, stats.total) + "%", t.callsCount(stats.demoBooked), "calendarCheck", STATUS_META.demo_booked.color, true);
+  h += kpiCard(t.status.refused, pct(stats.refused, stats.total) + "%", t.callsCount(stats.refused), "x", STATUS_META.refused.color, false);
+  h += '</section>';
+  return h;
+}
+function kpiCard(label, value, sub, iconName, accent, hero) {
+  if (hero) {
+    return '<div class="ticket ticket-hero"><div class="ticket-icon" style="color:var(--white)">' + icon(iconName, 18) + '</div>' +
+      '<div class="ticket-value hero-value">' + esc(value) + '</div>' +
+      '<div class="ticket-label hero-label">' + esc(label) + '</div>' +
+      (sub ? '<div class="ticket-sub hero-sub">' + esc(sub) + '</div>' : '') + '</div>';
+  }
+  return '<div class="ticket" style="border-top-color:' + accent + '"><div class="ticket-icon" style="color:' + accent + '">' + icon(iconName, 18) + '</div>' +
+    '<div class="ticket-value">' + esc(value) + '</div>' +
+    '<div class="ticket-label">' + esc(label) + '</div>' +
+    (sub ? '<div class="ticket-sub">' + esc(sub) + '</div>' : '') + '</div>';
+}
+
+function renderCharts(t, agentBreakdown, trendData) {
+  var h = '<section class="charts">';
+  if (state.filterAgent === "all" && agentBreakdown.length > 0) {
+    h += '<div class="panel"><h2>' + esc(t.breakdownByAgent) + '</h2>' + renderLegend(t) + renderBarChart(agentBreakdown) + '</div>';
+  }
+  h += '<div class="panel"><div class="panel-head"><h2>' + esc(t.trendOverDays(state.trendDays)) + '</h2><div class="segmented small">';
+  [7, 14, 30, 90].forEach(function (n) {
+    h += '<button class="seg' + (state.trendDays === n ? ' active' : '') + '" data-action="setTrendDays" data-days="' + n + '">' + n + ' ' + esc(t.dayAbbrev) + '</button>';
+  });
+  h += '</div></div>' + renderLegend(t) + renderLineChart(trendData) + '</div></section>';
+  return h;
+}
+
+function renderLegend(t) {
+  var h = '<div class="chart-legend">';
+  QUICK_STATUSES.forEach(function (key) {
+    h += '<span><i style="background:' + STATUS_META[key].color + '"></i>' + esc(t.status[key]) + '</span>';
+  });
+  return h + '</div>';
+}
+
+function renderBarChart(data) {
+  var W = 560, H = 220, padL = 30, padB = 26, padT = 8, padR = 8;
+  var innerW = W - padL - padR, innerH = H - padT - padB;
+  var maxVal = Math.max(1, Math.max.apply(null, data.map(function (d) { return d.unanswered + d.potential + d.demo_booked + d.refused; })));
+  var n = data.length;
+  var slot = innerW / n;
+  var barW = Math.min(46, slot * 0.55);
+  var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:220px;overflow:visible;">';
+  // gridlines
+  for (var g = 0; g <= 4; g++) {
+    var gy = padT + innerH - (g / 4) * innerH;
+    svg += '<line x1="' + padL + '" y1="' + gy + '" x2="' + (W - padR) + '" y2="' + gy + '" stroke="var(--line)" stroke-dasharray="3 3"/>';
+  }
+  data.forEach(function (d, i) {
+    var x = padL + i * slot + (slot - barW) / 2;
+    var yBase = padT + innerH;
+    var segs = [
+      { v: d.unanswered, c: STATUS_META.unanswered.color },
+      { v: d.potential, c: STATUS_META.potential.color },
+      { v: d.demo_booked, c: STATUS_META.demo_booked.color },
+      { v: d.refused, c: STATUS_META.refused.color }
+    ];
+    var cursorY = yBase;
+    segs.forEach(function (seg) {
+      var h = (seg.v / maxVal) * innerH;
+      if (h > 0) {
+        svg += '<rect x="' + x + '" y="' + (cursorY - h) + '" width="' + barW + '" height="' + h + '" fill="' + seg.c + '"></rect>';
+      }
+      cursorY -= h;
+    });
+    svg += '<text x="' + (x + barW / 2) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="11" fill="var(--ink-soft)" font-family="Manrope">' + esc(d.agent) + '</text>';
+  });
+  svg += '</svg>';
+  return svg;
+}
+
+function renderLineChart(data) {
+  var W = 560, H = 220, padL = 30, padB = 22, padT = 8, padR = 8;
+  var innerW = W - padL - padR, innerH = H - padT - padB;
+  var allVals = [];
+  data.forEach(function (d) { allVals.push(d.unanswered, d.potential, d.demo_booked, d.refused); });
+  var maxVal = Math.max(1, Math.max.apply(null, allVals));
+  var n = Math.max(1, data.length - 1);
+  function xAt(i) { return padL + (i / n) * innerW; }
+  function yAt(v) { return padT + innerH - (v / maxVal) * innerH; }
+  var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:220px;overflow:visible;">';
+  for (var g = 0; g <= 4; g++) {
+    var gy = padT + innerH - (g / 4) * innerH;
+    svg += '<line x1="' + padL + '" y1="' + gy + '" x2="' + (W - padR) + '" y2="' + gy + '" stroke="var(--line)" stroke-dasharray="3 3"/>';
+  }
+  ["unanswered", "potential", "demo_booked", "refused"].forEach(function (key) {
+    var pts = data.map(function (d, i) { return xAt(i) + "," + yAt(d[key]); }).join(" ");
+    svg += '<polyline points="' + pts + '" fill="none" stroke="' + STATUS_META[key].color + '" stroke-width="2"></polyline>';
+  });
+  var step = Math.max(1, Math.ceil(data.length / 8));
+  data.forEach(function (d, i) {
+    if (i % step === 0 || i === data.length - 1) {
+      svg += '<text x="' + xAt(i) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="10" fill="var(--ink-soft)" font-family="Manrope">' + esc(d.day) + '</text>';
+    }
+  });
+  svg += '</svg>';
+  return svg;
+}
+
+function renderUpcoming(t, upcoming) {
+  if (!upcoming.length) return "";
+  var h = '<section class="panel"><h2>' + esc(t.upcomingContacts) + '</h2><ul class="demo-list">';
+  upcoming.forEach(function (c) {
+    var days = Math.round((new Date(c.nextAction.dateTime) - new Date()) / DAY_MS);
+    var naMeta = NEXT_ACTION_META[c.nextAction.type] || NEXT_ACTION_META.callback;
+    var naLabel = t.nextAction[c.nextAction.type] || t.nextAction.callback;
+    h += '<li><div class="demo-date" style="color:' + naMeta.color + '"><strong>' + esc(fmtShort(new Date(c.nextAction.dateTime))) + '</strong><span>' + esc(days <= 0 ? t.today : t.inNDays(days)) + '</span></div>' +
+      '<div class="demo-info"><span class="chip" style="background:' + naMeta.color + '22;color:' + naMeta.color + '">' + esc(naLabel) + '</span>' +
+      '<span class="demo-client">' + esc(c.client || t.noNameClient) + '</span>' +
+      '<span class="demo-agent">' + esc(c.agent) + '</span>' +
+      (c.nextAction.notes ? '<span class="demo-notes">' + esc(c.nextAction.notes) + '</span>' : '') +
+      '</div></li>';
+  });
+  h += '</ul></section>';
+  return h;
+}
+
+function sortArrow(key) {
+  if (state.sortKey !== key) return "";
+  return state.sortDir === "asc" ? "▲" : "▼";
+}
+function sortableHead(label, key) {
+  return '<th class="sortable-th" data-action="sort" data-key="' + key + '"><span>' + esc(label) + '</span><span class="sort-arrow">' + sortArrow(key) + '</span></th>';
+}
+
+function renderHistory(t, range, sorted, visible) {
+  var h = '<section class="panel"><div class="panel-head"><h2>' + esc(t.history(range.label)) + '</h2>' +
+    '<select class="agent-filter" data-action="setHistoryStatusFilter"><option value="all"' + (state.historyStatusFilter === "all" ? ' selected' : '') + '>' + esc(t.allStatuses) + '</option>';
+  QUICK_STATUSES.forEach(function (key) {
+    h += '<option value="' + key + '"' + (state.historyStatusFilter === key ? ' selected' : '') + '>' + esc(t.status[key]) + '</option>';
+  });
+  h += '</select></div>';
+
+  if (visible.length === 0) {
+    h += '<p class="empty">' + esc(sorted.length === 0 ? t.noCallsPeriod : t.noCallsFilter) + '</p></section>';
+    return h;
+  }
+
+  h += '<div class="table-wrap"><table><thead><tr>' +
+    sortableHead(t.colDate, "dateTime") + sortableHead(t.colAgent, "agent") + sortableHead(t.colClient, "client") +
+    sortableHead(t.colStatus, "status") + sortableHead(t.colNextContact, "nextAction") +
+    '<th>' + esc(t.colNotes) + '</th><th></th></tr></thead><tbody>';
+
+  visible.forEach(function (c) {
+    var s = STATUS_META[c.status] || STATUS_META.unanswered;
+    var sLabel = t.status[c.status] || t.status.unanswered;
+    var naMeta = c.nextAction ? (NEXT_ACTION_META[c.nextAction.type] || NEXT_ACTION_META.callback) : null;
+    var naLabel = c.nextAction ? (t.nextAction[c.nextAction.type] || t.nextAction.callback) : null;
+    h += '<tr><td class="mono">' + esc(fmtShort(new Date(c.dateTime))) + '</td>' +
+      '<td>' + esc(c.agent) + '</td>' +
+      '<td>' + esc(c.client || "—") + '</td>' +
+      '<td><span class="chip" style="background:' + s.soft + ';color:' + s.color + '">' + icon(s.icon, 13) + ' ' + esc(sLabel) + '</span></td>' +
+      '<td class="mono">' + (naMeta ? '<span class="chip" style="background:' + naMeta.color + '22;color:' + naMeta.color + '">' + esc(naLabel) + ' ' + esc(fmtShort(new Date(c.nextAction.dateTime))) + '</span>' : '—') + '</td>' +
+      '<td class="notes-cell">' + esc(c.notes || (c.nextAction ? c.nextAction.notes : "") || "") + '</td>' +
+      '<td class="row-actions">' +
+      '<button class="icon-btn" data-action="editCall" data-id="' + c.id + '" aria-label="' + esc(t.edit) + '">' + icon("pencil", 14) + '</button>' +
+      (state.confirmDeleteId === c.id
+        ? '<button class="icon-btn danger" data-action="deleteCall" data-id="' + c.id + '">' + esc(t.confirm) + '</button>'
+        : '<button class="icon-btn" data-action="askDelete" data-id="' + c.id + '" aria-label="' + esc(t.delete) + '">' + icon("trash", 14) + '</button>') +
+      '</td></tr>';
+  });
+  h += '</tbody></table></div></section>';
+  return h;
+}
+
+// ================= events =================
+
+function attachEvents(t) {
+  root.querySelectorAll("[data-action]").forEach(function (el) {
+    var action = el.getAttribute("data-action");
+    var type = (el.tagName === "SELECT") ? "change" : (el.tagName === "FORM" ? "submit" : "click");
+    if (action === "sort" || action === "quickLog" || action === "setPeriodType" || action === "setTrendDays" ||
+        action === "quickChip" || action === "editCall" || action === "askDelete" || action === "deleteCall" ||
+        action === "formStatus" || action === "setLang") {
+      el.addEventListener("click", function (e) { handleAction(action, el, e, t); });
+    } else if (type === "change") {
+      el.addEventListener("change", function (e) { handleAction(action, el, e, t); });
+    } else if (type === "submit") {
+      el.addEventListener("submit", function (e) { handleAction(action, el, e, t); });
+    } else {
+      el.addEventListener("click", function (e) { handleAction(action, el, e, t); });
+    }
+  });
+
+  var callForm = document.getElementById("call-form");
+  if (callForm) {
+    callForm.addEventListener("submit", submitForm);
+    callForm.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  var qNaDate = document.getElementById("quick-na-date");
+  if (qNaDate) qNaDate.addEventListener("change", function () {
+    var last = findCall(state.lastLoggedId);
+    if (!last) return;
+    var type = qNaDate.getAttribute("data-type");
+    if (!qNaDate.value) { updateCall(last.id, { nextAction: null }); render(); return; }
+    var timeEl = document.getElementById("quick-na-time");
+    var timeVal = (timeEl && timeEl.value) || (last.nextAction ? toInputTime(new Date(last.nextAction.dateTime)) : "09:00");
+    updateCall(last.id, { nextAction: { type: type, dateTime: new Date(qNaDate.value + "T" + timeVal).toISOString(), notes: last.nextAction ? last.nextAction.notes : "" } });
+    render();
+  });
+  var qNaTime = document.getElementById("quick-na-time");
+  if (qNaTime) qNaTime.addEventListener("change", function () {
+    var last = findCall(state.lastLoggedId);
+    if (!last) return;
+    var type = qNaTime.getAttribute("data-type");
+    var dateEl = document.getElementById("quick-na-date");
+    var dateVal = (dateEl && dateEl.value) || toInputDate(new Date());
+    updateCall(last.id, { nextAction: { type: type, dateTime: new Date(dateVal + "T" + qNaTime.value).toISOString(), notes: last.nextAction ? last.nextAction.notes : "" } });
+    render();
+  });
+
+  var quickClientInput = document.getElementById("quick-client-input");
+  if (quickClientInput) {
+    quickClientInput.addEventListener("input", function () { quickClientDraft = quickClientInput.value; quickSaved = false; });
+    quickClientInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { saveQuickClientDraft(); quickSaved = true; render(); }
+    });
+  }
+
+  var topAgentInput = document.getElementById("top-agent-input");
+  if (topAgentInput) {
+    topAgentInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); handleAction("commitTopAgent", topAgentInput, e, t); }
+      if (e.key === "Escape") { state.addingAgentTop = false; render(); }
+    });
+  }
+  var formAgentDraft = document.getElementById("form-agent-draft");
+  if (formAgentDraft) {
+    formAgentDraft.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); handleAction("commitFormAgent", formAgentDraft, e, t); }
+      if (e.key === "Escape") { syncFormDraftFromDOM(); formDraft.addingAgent = false; render(); }
+    });
+  }
+}
+
+function handleAction(action, el, e, t) {
+  var id = el.getAttribute("data-id");
+  switch (action) {
+    case "setLang":
+      state.lang = el.getAttribute("data-lang"); saveLang(); render(); break;
+    case "manualRefresh": refreshFromServer(false); break;
+    case "agentSelect":
+      if (el.value === "__new__") { state.addingAgentTop = true; render(); }
+      else { state.currentAgent = el.value; saveCurrentAgent(); render(); }
+      break;
+    case "commitTopAgent": {
+      var input = document.getElementById("top-agent-input");
+      var name = input ? input.value.trim() : "";
+      if (name) { addAgentIfNew(name); state.currentAgent = name; saveCurrentAgent(); }
+      state.addingAgentTop = false; render();
+      break;
+    }
+    case "cancelTopAgent": state.addingAgentTop = false; render(); break;
+    case "askReset": state.confirmReset = true; render(); break;
+    case "cancelReset": state.confirmReset = false; render(); break;
+    case "resetAll": resetAllCalls(); break;
+    case "quickLog": quickLog(el.getAttribute("data-status")); break;
+    case "openDetailedForStatus": {
+      state.editingId = null;
+      formDraft = emptyFormDraft();
+      formDraft.status = el.getAttribute("data-status");
+      state.showForm = true;
+      render();
+      break;
+    }
+    case "openNewForm": openNewForm(); break;
+    case "closeFollowup": state.lastLoggedId = null; render(); break;
+    case "saveQuickClient": saveQuickClientDraft(); quickSaved = true; render(); break;
+    case "quickChip": applyQuickNextAction(parseInt(el.getAttribute("data-days"), 10), el.getAttribute("data-type")); break;
+    case "closeForm": closeForm(); break;
+    case "formAgentSelect":
+      syncFormDraftFromDOM();
+      if (el.value === "__new__") { formDraft.addingAgent = true; formDraft.agent = ""; }
+      else { formDraft.agent = el.value; }
+      render();
+      break;
+    case "commitFormAgent": {
+      syncFormDraftFromDOM();
+      var name2 = (formDraft.agentDraft || "").trim();
+      if (name2) { addAgentIfNew(name2); formDraft.agent = name2; }
+      formDraft.addingAgent = false;
+      render();
+      break;
+    }
+    case "formStatus":
+      syncFormDraftFromDOM();
+      formDraft.status = el.getAttribute("data-status");
+      render();
+      break;
+    case "setPeriodType": state.periodType = el.getAttribute("data-type"); state.periodOffset = 0; render(); break;
+    case "periodPrev": state.periodOffset -= 1; render(); break;
+    case "periodNext": state.periodOffset = Math.min(0, state.periodOffset + 1); render(); break;
+    case "setFilterAgent": state.filterAgent = el.value; render(); break;
+    case "setTrendDays": state.trendDays = parseInt(el.getAttribute("data-days"), 10); render(); break;
+    case "setHistoryStatusFilter": state.historyStatusFilter = el.value; render(); break;
+    case "sort": {
+      var key = el.getAttribute("data-key");
+      if (state.sortKey === key) state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
+      else { state.sortKey = key; state.sortDir = key === "dateTime" ? "desc" : "asc"; }
+      render();
+      break;
+    }
+    case "editCall": { var c = findCall(id); if (c) openEditForm(c); break; }
+    case "askDelete": state.confirmDeleteId = id; render(); break;
+    case "deleteCall": deleteCall(id); break;
+    default: break;
+  }
+}
+
+// ================= boot =================
+
+loadLocalPrefs();
+loadRemoteData();
+
+setInterval(function () {
+  if (state.dataLoading || state.showForm || state.lastLoggedId || state.confirmDeleteId || state.confirmReset) return;
+  refreshFromServer(true);
+}, 30000);
+</script>
+</body>
+</html>
